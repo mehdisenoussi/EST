@@ -7,7 +7,7 @@ from nilearn.image import new_img_like, load_img
 ################################################################
 # make sure to change this path
 ################################################################
-data_path = '/Volumes/MEHDIFAT/clayfmri/neuralData/'
+data_path = '/Volumes/MEHDIFAT/misc/clayfmri/neuralData/'
 ################################################################
 
 
@@ -22,7 +22,7 @@ scores_all = np.zeros(shape = [n_obs, 64, 64, 33])
 
 
 # for obs_i in np.arange(11n_obs):
-for obs_i in np.arange(11, 18):
+for obs_i in np.arange(n_obs):
 	# obs_i += 11
 	print('obs %i' % obs_i)
 	print('\tload data...')
@@ -47,7 +47,7 @@ for obs_i in np.arange(11, 18):
 
 
 	# load the mat file containing the information about each beta
-	vbeta_file = glob.glob('/Users/mehdi/work/ghent/danesh/code/Vbeta_*%02i.mat' % (obs_i+1))[0]
+	vbeta_file = glob.glob('/Users/mehdi/work/ghent/side_projects/danesh/code/Vbeta_*%02i.mat' % (obs_i+1))[0]
 	vbeta = loadmat(vbeta_file)['Vbeta'].squeeze()
 	# vbeta = loadmat('/Users/mehdi/work/ghent/danesh/code/Vbeta_SEQUENCE22JUL2016_%02i.mat' % )['Vbeta'].squeeze()
 	# to store whether a beta is in a coffee or tea sequence
@@ -91,44 +91,68 @@ for obs_i in np.arange(11, 18):
 	# water pouring 1st versus second in coffee sequence
 
 	### ONLY COFFEE WATER POURING
-	classif_con = 'coffee_w1_vs_w2'
+	# classif_con = 'coffee_w1_vs_w2'
+	# classif_con = 'temporal_control_1'
+	for classif_con in ['temporal_control_1', 'temporal_control_2', 'temporal_context_1', 'subtask_context_1', 'task_context_1']:
+		if classif_con == 'coffee_w1_vs_w2':
+			only_coffee_w1 = (coffee_or_tea == 'c') & (water_order == 1) & (action_n == 2)
+			only_coffee_w2 = (coffee_or_tea == 'c') & (water_order == 2) & (action_n == 4)
 
-	if classif_con == 'coffee_w1_vs_w2':
-		only_coffee_w1 = (coffee_or_tea == 'c') & (water_order == 1) & (action_n == 2)
-		only_coffee_w2 = (coffee_or_tea == 'c') & (water_order == 2) & (action_n == 4)
+			mask_classif = only_coffee_w1 | only_coffee_w2
+			y = only_coffee_w1 + (only_coffee_w2*2) #np.zeros(len(mask_classif))
+			y = y[mask_classif]
 
-		mask_classif = only_coffee_w1 | only_coffee_w2
-		y = only_coffee_w1 + (only_coffee_w2*2) #np.zeros(len(mask_classif))
-		y = y[mask_classif]
+			# beta_to_classif = beta_of_int[mask_classif, ...]
+		elif classif_con == 'temporal_control_1':
+			only_stir_after_water_mask = ((action_n == 2) & (water_order == 1)) | ((action_n == 4) & (water_order == 2))
+			mask_classif = only_stir_after_water_mask
+			y = (action_n[mask_classif] > 2).astype(np.int)
+			
+		elif classif_con == 'temporal_control_2':
+			only_stir_after_condit_mask = ((action_n == 2) & (water_order == 2)) | ((action_n == 4) & (water_order == 1))
+			mask_classif = only_stir_after_condit_mask
+			y = (action_n[mask_classif] > 2).astype(np.int)
+
+		elif classif_con == 'temporal_context_1':
+			first_or_second_stir = (action_n == 2) | (action_n == 4)
+			mask_classif = first_or_second_stir
+			y = (action_n[mask_classif] > 2).astype(np.int)
+
+		elif classif_con == 'subtask_context_1':
+			water_or_condit_stir = ((action_n == 2) & (water_order == 2)) | ((action_n == 2) & (water_order == 1))
+			mask_classif = water_or_condit_stir
+			y = (water_order[mask_classif] > 1).astype(np.int)
+
+		elif classif_con == 'task_context_1':
+			coffee_or_tea_stirs = ((coffee_or_tea == 'c') & ((action_n == 2) | (action_n == 4))) | ((coffee_or_tea == 't') & ((action_n == 2) | (action_n == 4)))
+			mask_classif = coffee_or_tea_stirs
+			y = (coffee_or_tea[mask_classif] == 't').astype(np.int)
 
 		beta_to_classif = beta_of_int[mask_classif, ...]
+		# import the cross-validation procedure
+		from sklearn.model_selection import KFold
+		cv = KFold(n_splits=2)
 
+		# import classification library
+		import nilearn.decoding
+		# create an IMG object from the array of betas
+		X = new_img_like(all_nifti_obj[-1], data=np.rollaxis(beta_to_classif.T, -1).T)
 
+		# y = pd.DataFrame(coffee_or_tea)
+		# y = coffee_or_tea
+		n_jobs = 8
+		searchlight = nilearn.decoding.SearchLight(
+		    mask,
+		    process_mask_img=None,
+		    radius=6, n_jobs=n_jobs,
+		    verbose=50, cv=cv)
+		print('\tdo classif...')
+		searchlight.fit(X, y)
+		scores_all[obs_i, ...] = searchlight.scores_
+		res_img = new_img_like(all_nifti_obj[-1], data=scores_all[obs_i, ...])
 
-	# import the cross-validation procedure
-	from sklearn.model_selection import KFold
-	cv = KFold(n_splits=4)
-
-	# import classification library
-	import nilearn.decoding
-	# create an IMG object from the array of betas
-	X = new_img_like(all_nifti_obj[-1], data=np.rollaxis(beta_to_classif.T, -1).T)
-
-	# y = pd.DataFrame(coffee_or_tea)
-	# y = coffee_or_tea
-	n_jobs = -1
-	searchlight = nilearn.decoding.SearchLight(
-	    mask,
-	    process_mask_img=None,
-	    radius=6, n_jobs=n_jobs,
-	    verbose=50, cv=cv)
-	print('\tdo classif...')
-	searchlight.fit(X, y)
-	scores_all[obs_i, ...] = searchlight.scores_
-	res_img = new_img_like(all_nifti_obj[-1], data=scores_all[obs_i, ...])
-
-	res_img.to_filename('obs%02i_classif_%s_res_sl6_image.nii' % (obs_i, classif_con))
-	print('\tdone!\n\n\n')
+		res_img.to_filename('obs%02i_classif_%s_res_sl6_image.nii' % (obs_i, classif_con))
+		print('\tdone!\n\n\n')
 
 
 

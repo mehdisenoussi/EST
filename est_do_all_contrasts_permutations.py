@@ -20,6 +20,7 @@ n_obs = len(obs_codes)
 # n_betas = 124
 scores_all = np.zeros(shape = [n_obs, 64, 64, 33])
 
+n_permutations = 10
 
 # for obs_i in np.arange(11n_obs):
 for obs_i in np.arange(n_obs):
@@ -142,7 +143,7 @@ for obs_i in np.arange(n_obs):
 		# y = coffee_or_tea
 		for perm_n in np.arange(n_permutations):
 			np.random.shuffle(y)
-			n_jobs = 8
+			n_jobs = -1
 			searchlight = nilearn.decoding.SearchLight(
 			    mask,
 			    process_mask_img=None,
