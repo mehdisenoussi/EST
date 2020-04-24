@@ -244,12 +244,13 @@ for s_ind in np.arange(n_subj):
 
 	pl.tight_layout()
 
-	pl.savefig('./subj_roi_plots/subj%02i_roiKDE.png' % s_ind, dpi=120)
+	pl.savefig('./subj_roi_plots/subj%02i_roiKDE_%s.png' % (s_ind, classif_con), dpi=120)
 	pl.close()
 
 
 
-
+for i in np.arange(n_subj):
+	print('\n\n### Subject %i\n\n![](https://github.com/mehdisenoussi/EST/blob/master/subj_roi_plots/subj%02i_roiKDE_task_context_1.png)' % (i, i))
 
 
 
