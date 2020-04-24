@@ -9,14 +9,18 @@ import numpy as np
 import numpy.linalg as npl
 import nibabel as nib
 from nibabel.affines import apply_affine
+from scipy import stats
 
 
 # function compute the average voxel value (in our case classification accuracies) in a anatomically defined ROI
 def get_avg_sl_acc_roi(sl_data, anat_rois, anat_vox2sl_vox, roi_inds):
-	# sl_data is a Nibabel Nifti image containing the searchlight results
-	# anat_rois is a Nibabel Nifti image containing the anatomical ROIs automatically segmented using Freesurfer
-	# anat_vox2sl_vox is the transformation matrix for coordinates from anatomical to functional (searchlight)
-	# roi_inds is a list of indices or codes referring to anatomical ROIs in the anat_rois volume
+	# - sl_data is a Nibabel Nifti image containing the searchlight results
+	# - anat_rois is a Nibabel Nifti image containing the anatomical ROIs
+	# automatically segmented using Freesurfer
+	# - anat_vox2sl_vox is the transformation matrix for coordinates from
+	# anatomical to functional (searchlight)
+	# - roi_inds is a list of indices or codes referring to anatomical ROIs
+	# in the anat_rois volume
 
 	# Create a mask of the selected ROIs in anat space
 	anat_roi_data = anat_rois.get_data().copy()
@@ -36,8 +40,11 @@ def get_avg_sl_acc_roi(sl_data, anat_rois, anat_vox2sl_vox, roi_inds):
 	for roi_slspace_ind_n in roi_slspace_inds:
 		roi_volmask_slspace[roi_slspace_ind_n[0], roi_slspace_ind_n[1], roi_slspace_ind_n[2]] = True
 
+	cl_values = sl_data.get_data()[roi_volmask_slspace]
+	cl_values = cl_values[cl_values > 0]
 	# return the ROI mask indices in functional space, the ROI mask in volume in functional space and the average value of the selected ROI in the functional volume
-	return roi_slspace_inds, roi_volmask_slspace, sl_data.get_data()[roi_volmask_slspace].mean()
+	return roi_slspace_inds, roi_volmask_slspace, stats.kde.gaussian_kde(cl_values)
+
 
 # data_path = '/Users/mehdi/work/ghent/side_projects/danesh/'
 data_path = '/Volumes/mehdimac/ghent/side_projects/danesh/'
@@ -45,10 +52,13 @@ data_path = '/Volumes/mehdimac/ghent/side_projects/danesh/'
 freesurfer_path = '/Applications/freesurfer/'
 
 
-## We can load different atlases from the automatic FreeSurfer segementations, they differ in the (number of) areas that were segmented.
+## We can load different atlases from the automatic FreeSurfer segementations,
+## they differ in the (number of) areas that were segmented.
 ## these files are simply anatomical volumes in the native T1 space of the participant.
 ## They are coded as numbers, e.g. anterior cingulate will be voxels with a value of 34.
-## you can look at all the parcels using the Freeview graphical interface included in FreeSurfer: https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/AnatomicalROI
+## you can look at all the parcels using the Freeview graphical interface included in
+## FreeSurfer: https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/AnatomicalROI
+
 # not so rich
 # anat_rois = nib.load('/Users/mehdi/work/ghent/side_projects/danesh/data/Ouput-Filesscanner/Sub01/mri/aparc.DKTatlas+aseg.mgz')
 
@@ -63,13 +73,14 @@ uniqs_rois_ind = np.unique(anat_rois.get_data())
 
 
 # get the labels associated with each number.
-# this table has the codes for all the segmentations so we need to find the labels in the file we loaded and find them in this table.
+# this table has the codes for all the segmentations so we need to find
+# the labels in the file we loaded and find them in this table.
 fs_labels = np.loadtxt(freesurfer_path + 'FreeSurferColorLUT.txt', dtype=np.str)
 # create a dictionary to store all codes' labels
 dict_code_label_all_seg = dict(zip(fs_labels[:, 0].astype(np.int), fs_labels[:, 1]))
 
 # find the labels associated with the codes in our chosen segmentation volume
-dict_code_label_this_seg = {} 
+dict_code_label_this_seg = {}
 for i in uniqs_rois_ind:
 	dict_code_label_this_seg.update({i:fs_labels[fs_labels[:, 0] == np.str(i), 1]})
 
@@ -77,19 +88,23 @@ for i in uniqs_rois_ind:
 n_subj = 18
 
 ## here are some examples ROIs just to show how to code them
-## each element of rois_inds is the codes for an ROI, an element is a multi-element list all these ROIs will be concatenated (e.g. left and right parts of an ROI)
-rois_inds = np.array([  #[1026, 2026], # left and right rostral anterior cingulate cortex
-						#[1002, 2002], # left and right caudal anterior cingulate cortex
-						[1003, 2003], # left and right caudal middle frontal cortex
-						[1018, 2018]])#, # left and right pars opercularis
+## each element of rois_inds is the codes for an ROI, an element is a
+## multi-element list all these ROIs will be concatenated (e.g. left and right parts of an ROI)
+rois_inds = np.array([  [1026, 2026]]), # left and right rostral anterior cingulate cortex
+						# [1002, 2002], # left and right caudal anterior cingulate cortex
+						# [1003, 2003], # left and right caudal middle frontal cortex
+						# [1018, 2018], # left and right pars opercularis
 						# [1019, 2019], # left and right pars orbitalis
 						# [1020, 2020]]) # left and right pars triangularis
 n_rois = len(rois_inds)
 
-# array to store the average classification accuracy by ROI
-rois_acc = np.zeros(shape = [n_subj, n_rois])
 
-classif_con = ['temporal_control_1', 'temporal_control_2', 'temporal_context_1', 'subtask_context_1', 'task_context_1'][1]
+classif_con = ['temporal_control_1', 'temporal_control_2',
+				'temporal_context_1', 'subtask_context_1',
+				'task_context_1'][4]
+
+# array to store the KDE object containing classification accuracies by ROI
+rois_acc = np.empty(shape = [n_subj, n_rois], dtype=stats.kde.gaussian_kde)
 
 for s_ind in range(n_subj):
 	print('subj %i' % (s_ind+1))
@@ -103,7 +118,8 @@ for s_ind in range(n_subj):
 		print('\troi %i' % (roi_ind+1))
 		for sub_roi_ind in roi_n_inds:
 			print('\t\troi: %s' % fs_labels[fs_labels[:, 0].astype(np.int) == sub_roi_ind, 1][0])
-		roi_slspace_inds, roi_volmask_slspace, rois_acc[s_ind, roi_ind] = get_avg_sl_acc_roi(sl_data, anat_rois, anat_vox2sl_vox, roi_n_inds)
+		roi_slspace_inds, roi_volmask_slspace, rois_acc[s_ind, roi_ind] =\
+				get_avg_sl_acc_roi(sl_data, anat_rois, anat_vox2sl_vox, roi_n_inds)
 	
 	## plot this ROI in the functional space just to check its location
 	## IF YOU UNCOMMENT THIS IT WILL PLOT ONE FIGURE PER ROI PER PARTICIPANT (which is a lot..)
@@ -121,17 +137,35 @@ for s_ind in range(n_subj):
 
 # failed attempt at plotting the selected areas in 3D just to check locations or ROIs
 # couldn't install nipy, I'll get to it later
-# nipy.labs.viz_tools.maps_3d.plot_map_3d(sldata_copy, sl_data.affine, anat=anat_rois.get_data(), anat_affine=anat_rois.affine)
+# nipy.labs.viz_tools.maps_3d.plot_map_3d(sldata_copy,
+# 		sl_data.affine, anat=anat_rois.get_data(), anat_affine=anat_rois.affine)
 
+
+rois_acc_means = np.array([[rois_acc[s_ind, roi_ind].dataset.mean()\
+	for roi_ind in np.arange(len(rois_inds))]\
+		for s_ind in np.arange(n_subj)])
+
+# rois_acc_stds = np.array([[rois_acc[s_ind, roi_ind].dataset.std()\
+# 	for roi_ind in np.arange(len(rois_inds))]\
+# 		for s_ind in np.arange(n_subj)])
+plevels = np.array([.1,.05,.01,.005])
+ptexts = np.array(['ms','*','**','***'])
+font = {'family': 'arial', 'color':  'red',
+        'weight': 'bold'}
+fontsizes = np.array([10, 20, 20, 20])
 ## Plot the results per ROI
 cols = []
 pl.figure()
 for roi_ind in np.arange(n_rois):
-	temp = pl.errorbar(x = roi_ind+.33, y = rois_acc[:, roi_ind].mean(),
-		yerr = rois_acc[:, roi_ind].std()/np.sqrt(n_subj), fmt = 'o',
+	temp = pl.errorbar(x = roi_ind+.33, y = rois_acc_means[:, roi_ind].mean(axis=0),
+		yerr = rois_acc_means[:, roi_ind].std(axis=0)/np.sqrt(n_subj), fmt = 'o',
 		label = dict_code_label_this_seg[rois_inds[roi_ind][0]][0])
 	cols.append(temp.get_children()[0].get_c())
-violins = pl.violinplot(rois_acc, positions = np.arange(n_rois), showmeans = True, showmedians=True)
+	t,p=stats.ttest_1samp(rois_acc_means[:, roi_ind], popmean=.5)
+	if p<plevels[0]:
+		pl.text(x=roi_ind, y=.3, s=ptexts[p<plevels][-1],
+			fontsize=fontsizes[p<plevels][-1], fontdict=font)
+violins = pl.violinplot(rois_acc_means, positions = np.arange(n_rois), showmeans = True, showmedians=True)
 # set the violin plots color to match the points
 for roi_ind in np.arange(n_rois): violins['bodies'][roi_ind].set_color(cols[roi_ind])
 pl.ylim(.1, .9)
@@ -139,3 +173,84 @@ pl.legend()
 pl.grid()
 pl.hlines(y=.5, xmin=-1, xmax=n_rois)
 pl.xlim(-1, n_rois)
+pl.ylabel('Classification accuracy')
+pl.suptitle('%s - average classif accuracy' % (classif_con))
+
+# skewness
+rois_acc_skews = np.array([[stats.skew(rois_acc[s_ind, roi_ind].dataset, axis=1)[0]\
+	for roi_ind in np.arange(len(rois_inds))]\
+		for s_ind in np.arange(n_subj)])
+## Plot the results per ROI
+cols = []
+pl.figure()
+for roi_ind in np.arange(n_rois):
+	temp = pl.errorbar(x = roi_ind+.33, y = rois_acc_skews[:, roi_ind].mean(axis=0),
+		yerr = rois_acc_skews[:, roi_ind].std(axis=0)/np.sqrt(n_subj), fmt = 'o',
+		label = dict_code_label_this_seg[rois_inds[roi_ind][0]][0])
+	cols.append(temp.get_children()[0].get_c())
+violins = pl.violinplot(rois_acc_skews, positions = np.arange(n_rois), showmeans = True, showmedians=True)
+# set the violin plots color to match the points
+for roi_ind in np.arange(n_rois): violins['bodies'][roi_ind].set_color(cols[roi_ind])
+pl.ylim(-1, 1)
+pl.legend()
+pl.grid()
+pl.hlines(y=0, xmin=-1, xmax=n_rois)
+pl.xlim(-1, n_rois)
+pl.ylabel('Skewness')
+pl.suptitle('%s - skewness' % (classif_con))
+
+
+
+# kurtosis
+rois_acc_kurts = np.array([[stats.kurtosis(rois_acc[s_ind, roi_ind].dataset, axis=1)[0]\
+	for roi_ind in np.arange(len(rois_inds))]\
+		for s_ind in np.arange(n_subj)])
+## Plot the results per ROI
+cols = []
+pl.figure()
+for roi_ind in np.arange(n_rois):
+	temp = pl.errorbar(x = roi_ind+.33, y = rois_acc_kurts[:, roi_ind].mean(axis=0),
+		yerr = rois_acc_kurts[:, roi_ind].std(axis=0)/np.sqrt(n_subj), fmt = 'o',
+		label = dict_code_label_this_seg[rois_inds[roi_ind][0]][0])
+	cols.append(temp.get_children()[0].get_c())
+violins = pl.violinplot(rois_acc_kurts, positions = np.arange(n_rois), showmeans = True, showmedians=True)
+# set the violin plots color to match the points
+for roi_ind in np.arange(n_rois): violins['bodies'][roi_ind].set_color(cols[roi_ind])
+pl.ylim(-1, 1)
+pl.legend()
+pl.grid()
+pl.hlines(y=0, xmin=-1, xmax=n_rois)
+pl.xlim(-1, n_rois)
+pl.ylabel('Kurtosis')
+pl.suptitle('%s - Kurtosis' % (classif_con))
+
+
+
+###### PLOT FOR INDIVIDUAL SUBJECTS #######
+
+xs = np.linspace(0, 1, 200)
+for s_ind in np.arange(n_subj):
+	fig, axs = pl.subplots(int(np.sqrt(n_rois))+1, int(np.sqrt(n_rois)))
+	pl.suptitle('sub=%i' % s_ind, fontsize=8)
+	for roi_ind in np.arange(n_rois):
+		axs.flatten()[roi_ind].plot(xs, rois_acc[s_ind, roi_ind].evaluate(xs))
+		areaname = dict_code_label_this_seg[rois_inds[roi_ind][0]][0].split('-')[-1]
+		data = rois_acc[s_ind, roi_ind].dataset
+		avg, sk, kur = data.mean(), stats.skew(data, axis=1)[0], stats.kurtosis(data, axis=1)
+		axs.flatten()[roi_ind].set_title('%s\navg=%.3f - sk=%.3f - kur=%.3f' % \
+			(areaname, avg, sk, kur), fontsize=8)
+		axs.flatten()[roi_ind].grid()
+		axs.flatten()[roi_ind].vlines(x=.5, ymin=b.get_ybound()[0], ymax=b.get_ybound()[1])
+
+	pl.tight_layout()
+
+	pl.savefig('./subj_roi_plots/subj%02i_roiKDE.png' % s_ind, dpi=120)
+	pl.close()
+
+
+
+
+
+
+
+
