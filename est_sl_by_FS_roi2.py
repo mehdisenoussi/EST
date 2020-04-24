@@ -90,12 +90,13 @@ n_subj = 18
 ## here are some examples ROIs just to show how to code them
 ## each element of rois_inds is the codes for an ROI, an element is a
 ## multi-element list all these ROIs will be concatenated (e.g. left and right parts of an ROI)
-rois_inds = np.array([  [1026, 2026]]), # left and right rostral anterior cingulate cortex
-						# [1002, 2002], # left and right caudal anterior cingulate cortex
-						# [1003, 2003], # left and right caudal middle frontal cortex
-						# [1018, 2018], # left and right pars opercularis
-						# [1019, 2019], # left and right pars orbitalis
-						# [1020, 2020]]) # left and right pars triangularis
+rois_inds = np.array([  [1025, 2025],
+						[1026, 2026], # left and right rostral anterior cingulate cortex
+						[1002, 2002], # left and right caudal anterior cingulate cortex
+						[1003, 2003], # left and right caudal middle frontal cortex
+						[1018, 2018], # left and right pars opercularis
+						[1019, 2019], # left and right pars orbitalis
+						[1020, 2020]]) # left and right pars triangularis
 n_rois = len(rois_inds)
 
 
@@ -141,6 +142,13 @@ for s_ind in range(n_subj):
 # 		sl_data.affine, anat=anat_rois.get_data(), anat_affine=anat_rois.affine)
 
 
+
+
+
+###################################################################
+######### 					AVERAGE 			###################
+###################################################################
+
 rois_acc_means = np.array([[rois_acc[s_ind, roi_ind].dataset.mean()\
 	for roi_ind in np.arange(len(rois_inds))]\
 		for s_ind in np.arange(n_subj)])
@@ -176,10 +184,17 @@ pl.xlim(-1, n_rois)
 pl.ylabel('Classification accuracy')
 pl.suptitle('%s - average classif accuracy' % (classif_con))
 
-# skewness
+
+
+
+
+###################################################################
+######### 					SKEWNESS 			###################
+###################################################################
 rois_acc_skews = np.array([[stats.skew(rois_acc[s_ind, roi_ind].dataset, axis=1)[0]\
 	for roi_ind in np.arange(len(rois_inds))]\
 		for s_ind in np.arange(n_subj)])
+
 ## Plot the results per ROI
 cols = []
 pl.figure()
@@ -201,7 +216,12 @@ pl.suptitle('%s - skewness' % (classif_con))
 
 
 
-# kurtosis
+
+
+
+###################################################################
+######### 					KURTOSIS 			###################
+###################################################################
 rois_acc_kurts = np.array([[stats.kurtosis(rois_acc[s_ind, roi_ind].dataset, axis=1)[0]\
 	for roi_ind in np.arange(len(rois_inds))]\
 		for s_ind in np.arange(n_subj)])
@@ -226,6 +246,13 @@ pl.suptitle('%s - Kurtosis' % (classif_con))
 
 
 
+
+
+
+
+
+
+
 ###### PLOT FOR INDIVIDUAL SUBJECTS #######
 
 xs = np.linspace(0, 1, 200)
@@ -236,7 +263,7 @@ for s_ind in np.arange(n_subj):
 		axs.flatten()[roi_ind].plot(xs, rois_acc[s_ind, roi_ind].evaluate(xs))
 		areaname = dict_code_label_this_seg[rois_inds[roi_ind][0]][0].split('-')[-1]
 		data = rois_acc[s_ind, roi_ind].dataset
-		avg, sk, kur = data.mean(), stats.skew(data, axis=1)[0], stats.kurtosis(data, axis=1)
+		avg, sk, kur = data.mean(), stats.skew(data-.5, axis=1)[0], stats.kurtosis(data-.5, axis=1)
 		axs.flatten()[roi_ind].set_title('%s\navg=%.3f - sk=%.3f - kur=%.3f' % \
 			(areaname, avg, sk, kur), fontsize=8)
 		axs.flatten()[roi_ind].grid()
@@ -244,7 +271,7 @@ for s_ind in np.arange(n_subj):
 
 	pl.tight_layout()
 
-	pl.savefig('./subj_roi_plots/subj%02i_roiKDE_%s.png' % (s_ind, classif_con), dpi=120)
+	pl.savefig('/Users/mehdi/work/ghent/side_projects/danesh/code/subj_roi_plots/subj%02i_roiKDE_%s.png' % (s_ind, classif_con), dpi=120)
 	pl.close()
 
 
