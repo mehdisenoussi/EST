@@ -1,13 +1,19 @@
-import glob
+import glob, time
 import nibabel as nib
 import numpy as np
 from scipy.io import loadmat
 from nilearn.image import new_img_like, load_img
+# import classification library
+import nilearn.decoding
+from sklearn import svm
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 
 ################################################################
-# make sure to change this path
+# make sure to change these paths
 ################################################################
 data_path = '/Volumes/MEHDIFAT/misc/clayfmri/neuralData/'
+res_path = '/Users/mehdi/work/ghent/side_projects/danesh/results/'
 ################################################################
 
 
@@ -20,10 +26,21 @@ n_obs = len(obs_codes)
 # n_betas = 124
 scores_all = np.zeros(shape = [n_obs, 64, 64, 33])
 
+sl_radius = 6
 
-# for obs_i in np.arange(11n_obs):
+
+
+
+################################################################
+# How many permutations do you want to do ??? (careful there..)
+################################################################
+n_perm = 1
+################################################################
+
+
+
+
 for obs_i in np.arange(n_obs):
-	# obs_i += 11
 	print('obs %i' % obs_i)
 	print('\tload data...')
 	# array to store all betas
@@ -39,13 +56,24 @@ for obs_i in np.arange(n_obs):
 		all_nifti_obj.append(nib.load(filename))
 		data_nonans = all_nifti_obj[-1].get_data()
 		# remove all NaNs and replace them with zeros
-		data_nonans[np.isnan(data_nonans)] = 0
+		# data_nonans[np.isnan(data_nonans)] = 0
 		allbetas[beta_ind, ...] = data_nonans
 		# print('\tdone!')
 	# load the "brain" mask
-	mask = nib.load(data_path + obs_codes[obs_i] + '/GLM/mask.nii')
+	glm_mask = nib.load(data_path + obs_codes[obs_i] + '/GLM/mask.nii')
 
+	################################################################
+	# Do you want to use the gray matter mask or the "nice" brain mask (gray + white matter)
+	# (de)comment the 
+	################################################################
+	# "nice" brain mask (gray & white)
+	# grayMat_mask = nib.load(res_path + 'masks/obs%02i_ribbon_grayAndWhiteMatter.nii' % obs_i)
 
+	# only gray matter mask
+	grayMat_mask = nib.load(res_path + 'masks/obs%02i_ribbon_grayMatter.nii' % obs_i)
+	################################################################
+
+	
 	# load the mat file containing the information about each beta
 	vbeta_file = glob.glob('/Users/mehdi/work/ghent/side_projects/danesh/code/Vbeta_*%02i.mat' % (obs_i+1))[0]
 	vbeta = loadmat(vbeta_file)['Vbeta'].squeeze()
@@ -93,7 +121,11 @@ for obs_i in np.arange(n_obs):
 	### ONLY COFFEE WATER POURING
 	# classif_con = 'coffee_w1_vs_w2'
 	# classif_con = 'temporal_control_1'
-	for classif_con in ['temporal_control_1', 'temporal_control_2', 'temporal_context_1', 'subtask_context_1', 'task_context_1']:
+	classif_cons = ['temporal_control_1', 'temporal_control_2', 'temporal_context_1',
+					'subtask_context_1', 'subtask_context_2', 'task_context_1'][-1:]
+	for classif_con in classif_cons:
+		t = time.time()
+		print('\tcontrast: %s' % classif_con)
 		if classif_con == 'coffee_w1_vs_w2':
 			only_coffee_w1 = (coffee_or_tea == 'c') & (water_order == 1) & (action_n == 2)
 			only_coffee_w2 = (coffee_or_tea == 'c') & (water_order == 2) & (action_n == 4)
@@ -104,27 +136,32 @@ for obs_i in np.arange(n_obs):
 
 			# beta_to_classif = beta_of_int[mask_classif, ...]
 		elif classif_con == 'temporal_control_1':
-			only_stir_after_water_mask = ((action_n == 2) & (water_order == 1)) | ((action_n == 4) & (water_order == 2))
+			only_stir_after_water_mask = ((action_n == 3) & (water_order == 1)) | ((action_n == 5) & (water_order == 2))
 			mask_classif = only_stir_after_water_mask
-			y = (action_n[mask_classif] > 2).astype(np.int)
+			y = (action_n[mask_classif] == np.unique(action_n[mask_classif])[0]).astype(np.int)
 			
 		elif classif_con == 'temporal_control_2':
-			only_stir_after_condit_mask = ((action_n == 2) & (water_order == 2)) | ((action_n == 4) & (water_order == 1))
+			only_stir_after_condit_mask = ((action_n == 3) & (water_order == 2)) | ((action_n == 5) & (water_order == 1))
 			mask_classif = only_stir_after_condit_mask
-			y = (action_n[mask_classif] > 2).astype(np.int)
+			y = (action_n[mask_classif] == np.unique(action_n[mask_classif])[0]).astype(np.int)
 
 		elif classif_con == 'temporal_context_1':
-			first_or_second_stir = (action_n == 2) | (action_n == 4)
+			first_or_second_stir = (action_n == 3) | (action_n == 5)
 			mask_classif = first_or_second_stir
-			y = (action_n[mask_classif] > 2).astype(np.int)
+			y = (action_n[mask_classif] == np.unique(action_n[mask_classif])[0]).astype(np.int)
 
 		elif classif_con == 'subtask_context_1':
-			water_or_condit_stir = ((action_n == 2) & (water_order == 2)) | ((action_n == 2) & (water_order == 1))
+			water_or_condit_stir = ((action_n == 3) & (water_order == 2)) | ((action_n == 3) & (water_order == 1))
 			mask_classif = water_or_condit_stir
 			y = (water_order[mask_classif] > 1).astype(np.int)
+		
+		elif classif_con == 'subtask_context_2':
+			water_or_condit_stir = ((action_n == 3) & (water_order == 2)) | ((action_n == 3) & (water_order == 1)) | ((action_n == 5) & (water_order == 2)) | ((action_n == 5) & (water_order == 1))
+			mask_classif = water_or_condit_stir
+			y = ((water_order[mask_classif] + action_n[mask_classif])==5).astype(np.int)+((water_order[mask_classif] + action_n[mask_classif])==6).astype(np.int)
 
 		elif classif_con == 'task_context_1':
-			coffee_or_tea_stirs = ((coffee_or_tea == 'c') & ((action_n == 2) | (action_n == 4))) | ((coffee_or_tea == 't') & ((action_n == 2) | (action_n == 4)))
+			coffee_or_tea_stirs = ((coffee_or_tea == 'c') & ((action_n == 3) | (action_n == 5))) | ((coffee_or_tea == 't') & ((action_n == 3) | (action_n == 5)))
 			mask_classif = coffee_or_tea_stirs
 			y = (coffee_or_tea[mask_classif] == 't').astype(np.int)
 
@@ -133,27 +170,54 @@ for obs_i in np.arange(n_obs):
 		from sklearn.model_selection import KFold
 		cv = KFold(n_splits=4)
 
-		# import classification library
-		import nilearn.decoding
+
 		# create an IMG object from the array of betas
 		X = new_img_like(all_nifti_obj[-1], data=np.rollaxis(beta_to_classif.T, -1).T)
 
 		# y = pd.DataFrame(coffee_or_tea)
 		# y = coffee_or_tea
+
+		
+		# create a classifer instance and specify the
+		# number of max iterations to converge
+		estim = svm.SVC(kernel = 'linear', max_iter = 3000)
+		# estim = Pipeline([('scaler', StandardScaler()),
+		# 	('svc', svm.SVC(kernel = 'linear', max_iter = 3000))])
+
 		n_jobs = -1
 		searchlight = nilearn.decoding.SearchLight(
-		    mask,
-		    process_mask_img=None,
-		    radius=6, n_jobs=n_jobs,
-		    verbose=50, cv=cv)
+			mask_img = glm_mask,
+			process_mask_img=grayMat_mask,
+			radius=sl_radius, n_jobs=n_jobs,
+			verbose=False, cv=cv, estimator = estim)
 		print('\tdo classif...')
 		searchlight.fit(X, y)
 		scores_all[obs_i, ...] = searchlight.scores_
 		res_img = new_img_like(all_nifti_obj[-1], data=scores_all[obs_i, ...])
 
-		res_img.to_filename('obs%02i_classif_%s_res_sl6_image.nii' % (obs_i, classif_con))
-		print('\tdone!\n\n\n')
+		res_img.to_filename(res_path + 'grayMat/obs%02i_classif_%s_res_sl%i_image.nii' %\
+			(obs_i, classif_con, sl_radius))
 
+		# permutations
+		for perm_n in np.arange(n_perm):
+			print('\tdo classif...')
+			np.random.shuffle(y)
+			estim = svm.SVC(kernel = 'linear', max_iter = 3000)
+
+			n_jobs = -1
+			searchlight = nilearn.decoding.SearchLight(
+				mask_img = glm_mask,
+				process_mask_img=grayMat_mask,
+				radius=sl_radius, n_jobs=n_jobs,
+				verbose=False, cv=cv, estimator = estim)
+			searchlight.fit(X, y)
+			scores_all[obs_i, ...] = searchlight.scores_
+			res_img = new_img_like(all_nifti_obj[-1], data=scores_all[obs_i, ...])
+
+			res_img.to_filename(res_path +\
+				'grayMat/obs%02i_classif_%s_res_sl%i_image_perm%i.nii' %\
+				(obs_i, classif_con, sl_radius, perm_n))
+		print('\t\ttime taken: %.2f\n' % ((time.time()-t)/60))
 
 
 
