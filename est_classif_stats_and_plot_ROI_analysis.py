@@ -1,3 +1,7 @@
+# script to plot and compute stats on the ROI classif analysis
+#
+# author: Mehdi Senoussi, 24/08/20
+
 from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as pl

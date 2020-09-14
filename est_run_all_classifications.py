@@ -1,3 +1,7 @@
+# script to run all classifications reported in the manuscript
+#
+# author: Mehdi Senoussi, 16/08/20
+
 import glob
 from pathlib import Path
 import nibabel as nib

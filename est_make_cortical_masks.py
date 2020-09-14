@@ -1,3 +1,8 @@
+# script to extract each subject's cortical mask from the Freesurfer
+# segmentation
+#
+# author: Mehdi Senoussi, 15/05/20
+
 from nilearn.image import new_img_like
 import glob, time
 import nibabel as nib

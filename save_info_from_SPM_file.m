@@ -1,3 +1,8 @@
+% script to extract each subject's Vbeta structre which contains information
+% on each beta (e.g. coffee or tea sequence, etc.) from the SPM GLM files
+%
+% author: Mehdi Senoussi, 11/05/20
+
 % change this path to the location where the preprocessed data are
 data_path = '/Volumes/mehdimac/ghent/est/data/holroyd2018/';
 % get all the directories there, they represent each subject

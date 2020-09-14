@@ -1,3 +1,7 @@
+# script to extract each subject's betas of interest
+#
+# author: Mehdi Senoussi, 12/06/20
+
 import glob
 import nibabel as nib
 import numpy as np
