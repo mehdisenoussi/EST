@@ -27,7 +27,7 @@ for obs_ind in np.arange(n_obs):
 	print('\tload data...')
 	obs_num = obs_ind + 1
 	# array to store all betas
-	n_betas = len(glob.glob((betas_data_path / ('%s/GLM/beta_0*'%obs_codes[obs_ind])).as_posix()))
+	n_betas = len(glob.glob((betas_data_path / ('%s/GLM/beta_0*' % obs_codes[obs_ind])).as_posix()))
 	allbetas = np.zeros(shape = [n_betas, 64, 64, 33])
 	all_nifti_obj = []
 

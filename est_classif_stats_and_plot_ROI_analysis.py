@@ -14,11 +14,11 @@ n_obs = 18
 
 analysis_to_run = 'roi_classif'
 
-z = np.load(res_path / ('classif_res_%s.npz' % analysis_to_run), allow_pickle=True)['arr_0'][...,np.newaxis][0]
+z = np.load(res_path / ('classif_res_%s.npz' % analysis_to_run), allow_pickle = True)['arr_0'][...,np.newaxis][0]
 scores_all = z['scores_all']
 
 # load ROIs info
-z = np.load(res_path / ('rois_and_names_%s.npz' % analysis_to_run), allow_pickle=True)['arr_0'][...,np.newaxis][0]
+z = np.load(res_path / ('rois_and_names_%s.npz' % analysis_to_run), allow_pickle = True)['arr_0'][...,np.newaxis][0]
 rois_inds = z['rois_inds']
 roi_names = z['roi_names']
 n_rois = len(rois_inds)

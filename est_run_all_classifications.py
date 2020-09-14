@@ -187,7 +187,7 @@ for obs_ind in np.arange(n_obs):
 	anat_vox2func_vox = npl.inv(func_affine).dot(anat_rois.affine)
 
 	for roi_ind, roi_n_inds in enumerate(rois_inds):
-		print('\troi %i' % (roi_ind+1))
+		print('\troi %i' % (roi_ind + 1))
 		roi_funcSpace_inds, roi_volmask_funcSpace =\
 				get_anat_roi_func_coord(func_shape, anat_rois,
 					anat_vox2func_vox, roi_n_inds, grayMat_mask)

@@ -14,7 +14,7 @@ list = list(4:end);
 % e.g. beta103.nii is the action 3 (stirring) for a coffee making sequence with water first.
 % we the save the Vbeta structure to be able to load it with Python in the searchlight analysis script
 for li = list'
-    load([data_path, li.name, '/GLM/SPM.mat'])
+    load([data_path, li.name, '/GLM/SPM.mat']);
     Vbeta = SPM.Vbeta;
     % make sure to change this path
     save(sprintf('./results/Vbeta_%s.mat', li.name), 'Vbeta');

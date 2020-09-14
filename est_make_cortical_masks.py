@@ -30,7 +30,7 @@ obs_codes = np.array([op.split('/')[-1] for op in obs_paths])
 for s_ind in np.arange(18):
 	print('subj %i' % s_ind)
 	# load the brain mask
-	anat_mask = nib.load((anat_data_path / Path('Sub%02i/mri/ribbon.mgz' % (s_ind+1))).as_posix())
+	anat_mask = nib.load((anat_data_path / Path('Sub%02i/mri/ribbon.mgz' % (s_ind + 1))).as_posix())
 
 	glm_mask = nib.load((betas_data_path / Path('%s/GLM/mask.nii' % obs_codes[s_ind])).as_posix())
 
