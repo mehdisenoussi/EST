@@ -1,5 +1,5 @@
 % change this path to the location where the preprocessed data are
-data_path = '/Volumes/MEHDIFAT/clayfmri/neuralData/';
+data_path = '/Volumes/mehdimac/ghent/est/data/holroyd2018/';
 % get all the directories there, they represent each subject
 list = dir(data_path);
 list = list(4:end);
@@ -12,5 +12,5 @@ for li = list'
     load([data_path, li.name, '/GLM/SPM.mat'])
     Vbeta = SPM.Vbeta;
     % make sure to change this path
-    save(sprintf('/Users/mehdi/work/ghent/danesh/code/Vbeta_%s.mat', li.name), 'Vbeta');
+    save(sprintf('./results/Vbeta_%s.mat', li.name), 'Vbeta');
 end
