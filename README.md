@@ -1,10 +1,9 @@
 # Welcome!
 
-This is a set of Matlab and Python scripts to perform the analyses for the study "Neural representations of task context and temporal order during action sequence execution" Senoussi, Verbeke, Desender, De Loof, Talsma & Verguts - 2020 (Submitted)
+This is a set of Matlab and Python scripts to perform the analyses for the study "Neural representations of task context and temporal order during action sequence execution" Shahnazian, Senoussi, Krebs, Verguts, Holroyd (submitted), preprint: [https://www.biorxiv.org/content/10.1101/2020.09.10.290965v1](https://www.biorxiv.org/content/10.1101/2020.09.10.290965v1)
+
 
 These scripts were written and tested on Matlab 2015b and Python version 3.7. (see preprint for full list and versions of Python packages used)
-Here is a link to the preprint: [https://www.biorxiv.org/content/10.1101/2020.09.10.290965v1](https://www.biorxiv.org/content/10.1101/2020.09.10.290965v1)
-
 The dataset used is available through this Open Science Framework repository of Holroyd et al. (2018): [https://osf.io/wxhta/](https://osf.io/wxhta/)
 
 For simplicity and accessibility we will soon add another link to a repository with the data from Holroyd et al. (2018) and the data from Freesurfer we computed. [to come soon]
