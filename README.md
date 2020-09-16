@@ -7,9 +7,10 @@ Here is a link to the preprint: [https://www.biorxiv.org/content/10.1101/2020.09
 
 The dataset used is available through this Open Science Framework repository of Holroyd et al. (2018): [https://osf.io/wxhta/](https://osf.io/wxhta/)
 
-For simplicity and accessibility we will soon add another link to a repository with the data from Holroyd et al. (2018) and the data from Freesurfer we computed. [to come soon]
+For simplicity and accessibility, we additionally uploaded the minimal data (GLM and Freesurfer outputs) from Holroyd et al. (2018) needed to reproduce our results on this OSF repository: [https://osf.io/4c9qu/?view_only=208f4e54692b440790e51f9f56e2b750](https://osf.io/4c9qu/?view_only=208f4e54692b440790e51f9f56e2b750)
+To use these data to reproduce our results, unpack the zip file and change the paths in the scripts to the unpacked “data” directory.
 
-To run any of the scripts you should be in the "EST" directory and place the data from OSF in the "data" folder inside this directory.
+To run any of the scripts you should be in the "EST" directory.
 
 # Scripts order
 To reproduce the results figures from the manuscript you need to run scripts in this order:
