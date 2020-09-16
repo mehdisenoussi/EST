@@ -3,11 +3,15 @@
 This is a set of Matlab and Python scripts to perform the analyses for the study "Neural representations of task context and temporal order during action sequence execution" Shahnazian, Senoussi, Krebs, Verguts, Holroyd (submitted), preprint: [https://www.biorxiv.org/content/10.1101/2020.09.10.290965v1](https://www.biorxiv.org/content/10.1101/2020.09.10.290965v1)
 
 
-These scripts were written and tested on Matlab 2015b and Python version 3.7. (see preprint for full list and versions of Python packages used)
+These scripts were written and tested on Matlab 2015b and Python version 3.7. (see preprint for full list and versions of Python packages used).
+
 The dataset used is available through this Open Science Framework repository of Holroyd et al. (2018): [https://osf.io/wxhta/](https://osf.io/wxhta/)
 
-For simplicity and accessibility, we additionally uploaded the minimal data (GLM and Freesurfer outputs) from Holroyd et al. (2018) needed to reproduce our results on this OSF repository: [https://osf.io/4c9qu/?view_only=208f4e54692b440790e51f9f56e2b750](https://osf.io/4c9qu/?view_only=208f4e54692b440790e51f9f56e2b750)
+
+For simplicity and accessibility, we additionally uploaded the minimal data (GLM and Freesurfer outputs) from Holroyd et al. (2018) needed to reproduce our results on this OSF repository: [https://osf.io/4c9qu/?view_only=208f4e54692b440790e51f9f56e2b750](https://osf.io/4c9qu/?view_only=208f4e54692b440790e51f9f56e2b750).
+
 To use these data to reproduce our results, unpack the zip file and change the paths in the scripts to the unpacked “data” directory.
+
 
 To run any of the scripts you should be in the "EST" directory.
 
